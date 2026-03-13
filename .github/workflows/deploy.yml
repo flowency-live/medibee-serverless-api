@@ -71,7 +71,7 @@ jobs:
     name: Deploy to Dev
     needs: [test, synth]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     environment: development
     steps:
       - name: Checkout code
@@ -120,7 +120,7 @@ jobs:
     name: Integration Tests
     needs: deploy-dev
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     environment: development
     steps:
       - name: Checkout code
