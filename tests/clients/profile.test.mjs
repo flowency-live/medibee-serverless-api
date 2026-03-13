@@ -44,9 +44,22 @@ describe('GET /clients/me', () => {
     });
 
     it('should return 401 with invalid JWT', async () => {
-      const event = createApiEvent('GET', '/clients/me', null, {
-        authorization: 'Bearer invalid-token',
-      });
+      // When API Gateway authorizer rejects the token, it doesn't forward
+      // the request to Lambda at all. This test verifies the handler
+      // correctly handles missing authorizer context.
+      const event = {
+        requestContext: {
+          http: { method: 'GET' },
+          // No authorizer context - simulates failed JWT verification
+        },
+        rawPath: '/clients/me',
+        headers: {
+          origin: 'https://medibee.opstack.uk',
+          'content-type': 'application/json',
+          authorization: 'Bearer invalid-token',
+        },
+        body: null,
+      };
 
       const { handler } = await import('../../lambdas/clients/index.mjs');
       const response = await handler(event, {});
