@@ -89,6 +89,9 @@ jobs:
       - name: Install CDK dependencies
         run: cd cdk && npm ci
 
+      - name: Install Lambda layer dependencies
+        run: cd lambda-layers/medibee-common/nodejs && npm install
+
       - name: Install Lambda dependencies
         run: |
           for dir in lambdas/*/; do
