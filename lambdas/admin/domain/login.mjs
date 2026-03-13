@@ -8,7 +8,8 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac } from 'crypto';
+import { verifyPassword } from '/opt/nodejs/lib/password.mjs';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -39,24 +40,11 @@ async function getJwtSecret() {
 }
 
 /**
- * Hash password using Argon2id-compatible format
- * For admin login verification against stored hash
+ * Verify admin password using shared password module
+ * Uses hash-wasm Argon2id (pure WebAssembly, cross-platform)
  */
-async function verifyPassword(password, storedHash) {
-  // Dynamic import for argon2 (if available) or fallback
-  try {
-    const argon2 = await import('argon2');
-    return await argon2.verify(storedHash, password);
-  } catch {
-    // Fallback: simple HMAC comparison (for testing/development)
-    // In production, argon2 should be available via Lambda layer
-    const [algorithm, salt, hash] = storedHash.split('$').slice(1);
-    if (algorithm !== 'argon2id') {
-      throw new Error('Invalid password hash format');
-    }
-    // This is a simplified fallback - real impl uses argon2
-    return false;
-  }
+async function verifyAdminPassword(password, storedHash) {
+  return await verifyPassword(storedHash, password);
 }
 
 /**
@@ -143,7 +131,7 @@ export async function adminLogin(credentials, logger) {
   }
 
   // Verify password
-  const passwordValid = await verifyPassword(password, admin.passwordHash);
+  const passwordValid = await verifyAdminPassword(password, admin.passwordHash);
 
   if (!passwordValid) {
     logger.warn('Invalid password for admin', { email });

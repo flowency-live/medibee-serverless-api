@@ -6,7 +6,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import argon2 from 'argon2';
+import { hashPassword } from '/opt/nodejs/lib/password.mjs';
 import { nanoid } from 'nanoid';
 
 const dynamoClient = new DynamoDBClient({});
@@ -142,13 +142,8 @@ export async function registerClient(data, logger) {
 
   logger.info('Creating new client', { clientId, organisationName });
 
-  // Hash password
-  const passwordHash = await argon2.hash(password, {
-    type: argon2.argon2id,
-    memoryCost: 65536,
-    timeCost: 3,
-    parallelism: 4,
-  });
+  // Hash password using OWASP-recommended Argon2id
+  const passwordHash = await hashPassword(password);
 
   // Create client profile record
   const profileItem = {

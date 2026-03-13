@@ -5,7 +5,7 @@
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import argon2 from 'argon2';
+import { hashPassword } from '/opt/nodejs/lib/password.mjs';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -41,13 +41,8 @@ export async function resetPassword(token, newPassword, logger) {
 
   logger.info('Token found, resetting password', { candidateId });
 
-  // Hash the new password
-  const passwordHash = await argon2.hash(newPassword, {
-    type: argon2.argon2id,
-    memoryCost: 65536,
-    timeCost: 3,
-    parallelism: 4,
-  });
+  // Hash the new password using OWASP-recommended Argon2id
+  const passwordHash = await hashPassword(newPassword);
 
   const now = new Date().toISOString();
 

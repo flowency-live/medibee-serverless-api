@@ -5,7 +5,7 @@
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import argon2 from 'argon2';
+import { verifyPassword } from '/opt/nodejs/lib/password.mjs';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import { getJWTSecret } from '/opt/nodejs/lib/auth.mjs';
@@ -111,7 +111,7 @@ export async function loginClient(email, password, logger) {
   }
 
   // Verify password
-  const passwordValid = await argon2.verify(auth.passwordHash, password);
+  const passwordValid = await verifyPassword(auth.passwordHash, password);
 
   if (!passwordValid) {
     logger.warn('Client login failed - invalid password', { clientId });
