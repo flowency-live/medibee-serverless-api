@@ -33,12 +33,12 @@ export class ContactsStack extends cdk.Stack {
     };
 
     // Common Lambda configuration
-    const commonConfig: Partial<lambda.FunctionProps> = {
+    const commonConfig = {
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
-      layers: [commonLayer],
+      layers: [commonLayer] as lambda.ILayerVersion[],
       environment: commonEnv,
     };
 

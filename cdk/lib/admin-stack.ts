@@ -33,12 +33,12 @@ export class AdminStack extends cdk.Stack {
     };
 
     // Common Lambda configuration
-    const commonConfig: Partial<lambda.FunctionProps> = {
+    const commonConfig = {
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512, // Higher memory for analytics queries
-      layers: [commonLayer],
+      layers: [commonLayer] as lambda.ILayerVersion[],
       environment: commonEnv,
     };
 
