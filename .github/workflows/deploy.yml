@@ -1,0 +1,144 @@
+name: Deploy Medibee API
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-west-2
+  NODE_VERSION: '20'
+
+jobs:
+  # ===========================================
+  # Unit Tests
+  # ===========================================
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+  # ===========================================
+  # CDK Synth (validate infrastructure)
+  # ===========================================
+  synth:
+    name: CDK Synth
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install CDK dependencies
+        run: cd cdk && npm ci
+
+      - name: CDK Synth
+        run: cd cdk && npx cdk synth --context stage=dev
+
+  # ===========================================
+  # Deploy to Dev (main branch only)
+  # ===========================================
+  deploy-dev:
+    name: Deploy to Dev
+    needs: [test, synth]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: development
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install CDK dependencies
+        run: cd cdk && npm ci
+
+      - name: Install Lambda dependencies
+        run: |
+          cd lambdas/authorizer && npm ci && cd ../..
+          cd lambdas/auth && npm ci && cd ../..
+          cd lambdas/candidates && npm ci && cd ../..
+          cd lambdas/uploads && npm ci && cd ../..
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Bootstrap (if needed)
+        run: cd cdk && npx cdk bootstrap --context stage=dev || true
+
+      - name: CDK Deploy
+        run: cd cdk && npx cdk deploy --all --context stage=dev --require-approval never
+
+  # ===========================================
+  # Integration Tests (after deploy)
+  # ===========================================
+  integration-test:
+    name: Integration Tests
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: development
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get API URL
+        id: get-api-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks --stack-name medibee-api-dev --query "Stacks[0].Outputs[?ExportName=='medibee-api-url-dev'].OutputValue" --output text)
+          echo "API_URL=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          API_BASE_URL: ${{ steps.get-api-url.outputs.API_URL }}

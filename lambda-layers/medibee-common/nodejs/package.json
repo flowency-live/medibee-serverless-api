@@ -1,0 +1,6 @@
+{
+  "name": "medibee-common-layer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Medibee shared Lambda utilities"
+}

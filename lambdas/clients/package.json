@@ -1,0 +1,15 @@
+{
+  "name": "medibee-clients",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.525.0",
+    "@aws-sdk/client-ses": "^3.525.0",
+    "@aws-sdk/client-ssm": "^3.525.0",
+    "@aws-sdk/lib-dynamodb": "^3.525.0",
+    "argon2": "^0.31.2",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.5",
+    "zod": "^3.22.4"
+  }
+}

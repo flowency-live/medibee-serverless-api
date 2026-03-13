@@ -1,0 +1,41 @@
+{
+  "name": "medibee-serverless-api",
+  "version": "0.1.0",
+  "description": "Medibee Talent Showcase Platform - Serverless API",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mjs",
+    "lint": "eslint .",
+    "cdk:synth": "cd cdk && cdk synth",
+    "cdk:deploy:dev": "cd cdk && cdk deploy --all --context stage=dev",
+    "cdk:deploy:prod": "cd cdk && cdk deploy --all --context stage=prod --require-approval broadening"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.525.0",
+    "@aws-sdk/client-s3": "^3.525.0",
+    "@aws-sdk/client-ses": "^3.525.0",
+    "@aws-sdk/client-ssm": "^3.525.0",
+    "@aws-sdk/lib-dynamodb": "^3.525.0",
+    "@aws-sdk/s3-request-presigner": "^3.525.0",
+    "argon2": "^0.31.2",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.6",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.11.24",
+    "aws-cdk": "^2.133.0",
+    "aws-cdk-lib": "^2.133.0",
+    "constructs": "^10.3.0",
+    "esbuild": "^0.20.1",
+    "eslint": "^8.57.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
