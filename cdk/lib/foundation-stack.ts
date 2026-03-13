@@ -1,8 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
+import * as path from 'path';
 
 interface FoundationStackProps extends cdk.StackProps {
   stage: string;
@@ -11,6 +13,7 @@ interface FoundationStackProps extends cdk.StackProps {
 export class FoundationStack extends cdk.Stack {
   public readonly table: dynamodb.Table;
   public readonly filesBucket: s3.Bucket;
+  public readonly commonLayer: lambda.LayerVersion;
 
   constructor(scope: Construct, id: string, props: FoundationStackProps) {
     super(scope, id, props);
@@ -96,6 +99,16 @@ export class FoundationStack extends cdk.Stack {
       stringValue: 'PLACEHOLDER-SET-VIA-CONSOLE',
       description: 'JWT signing secret for Medibee auth (replace via console)',
       tier: ssm.ParameterTier.STANDARD,
+    });
+
+    // ===========================================
+    // Lambda Layer (shared utilities)
+    // ===========================================
+    this.commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
+      layerVersionName: `medibee-common-${stage}`,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-layers/medibee-common')),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Medibee shared utilities (logger, cors, auth, responses)',
     });
 
     // ===========================================

@@ -31,6 +31,7 @@ const candidatesStack = new CandidatesStack(app, `medibee-candidates-${stage}`, 
   stage,
   table: foundationStack.table,
   filesBucket: foundationStack.filesBucket,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Candidate Lambda Functions',
 });
 candidatesStack.addDependency(foundationStack);
@@ -40,50 +41,50 @@ const clientsStack = new ClientsStack(app, `medibee-clients-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: candidatesStack.commonLayer,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Client Lambda Functions',
 });
-clientsStack.addDependency(candidatesStack);
+clientsStack.addDependency(foundationStack);
 
 // Subscription Stack: Stripe billing and subscription management
 const subscriptionStack = new SubscriptionStack(app, `medibee-subscription-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: candidatesStack.commonLayer,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Subscription Lambda Functions',
 });
-subscriptionStack.addDependency(clientsStack);
+subscriptionStack.addDependency(foundationStack);
 
 // Matching Stack: Browse candidates, shortlists
 const matchingStack = new MatchingStack(app, `medibee-matching-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: candidatesStack.commonLayer,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Matching Lambda Functions',
 });
-matchingStack.addDependency(subscriptionStack);
+matchingStack.addDependency(foundationStack);
 
 // Contacts Stack: Contact requests with credit deduction
 const contactsStack = new ContactsStack(app, `medibee-contacts-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: candidatesStack.commonLayer,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Contacts Lambda Functions',
 });
-contactsStack.addDependency(matchingStack);
+contactsStack.addDependency(foundationStack);
 
 // Admin Stack: Moderation, analytics, management
 const adminStack = new AdminStack(app, `medibee-admin-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: candidatesStack.commonLayer,
+  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Admin Lambda Functions',
 });
-adminStack.addDependency(contactsStack);
+adminStack.addDependency(foundationStack);
 
 // API Stack: API Gateway, Authorizer, Routes
 const apiStack = new ApiStack(app, `medibee-api-${stage}`, {
@@ -99,6 +100,11 @@ const apiStack = new ApiStack(app, `medibee-api-${stage}`, {
   adminLambda: adminStack.adminLambda,
   description: 'Medibee Talent Showcase - API Gateway',
 });
+apiStack.addDependency(candidatesStack);
+apiStack.addDependency(clientsStack);
+apiStack.addDependency(subscriptionStack);
+apiStack.addDependency(matchingStack);
+apiStack.addDependency(contactsStack);
 apiStack.addDependency(adminStack);
 
 // Tags for all resources

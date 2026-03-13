@@ -3,7 +3,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -11,28 +10,18 @@ interface CandidatesStackProps extends cdk.StackProps {
   stage: string;
   table: dynamodb.Table;
   filesBucket: s3.Bucket;
+  commonLayer: lambda.ILayerVersion;
 }
 
 export class CandidatesStack extends cdk.Stack {
   public readonly authLambda: lambda.Function;
   public readonly candidatesLambda: lambda.Function;
   public readonly uploadsLambda: lambda.Function;
-  public readonly commonLayer: lambda.LayerVersion;
 
   constructor(scope: Construct, id: string, props: CandidatesStackProps) {
     super(scope, id, props);
 
-    const { stage, table, filesBucket } = props;
-
-    // ===========================================
-    // Lambda Layer (shared utilities)
-    // ===========================================
-    this.commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
-      layerVersionName: `medibee-common-${stage}`,
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-layers/medibee-common')),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
-      description: 'Medibee shared utilities (logger, cors, auth, responses)',
-    });
+    const { stage, table, filesBucket, commonLayer } = props;
 
     // Common Lambda environment variables
     const commonEnv = {
@@ -50,7 +39,7 @@ export class CandidatesStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
-      layers: [this.commonLayer] as lambda.ILayerVersion[],
+      layers: [commonLayer] as lambda.ILayerVersion[],
       environment: commonEnv,
     };
 
