@@ -85,10 +85,12 @@ jobs:
 
       - name: Install Lambda dependencies
         run: |
-          cd lambdas/authorizer && npm ci && cd ../..
-          cd lambdas/auth && npm ci && cd ../..
-          cd lambdas/candidates && npm ci && cd ../..
-          cd lambdas/uploads && npm ci && cd ../..
+          for dir in lambdas/*/; do
+            if [ -f "$dir/package.json" ]; then
+              echo "Installing dependencies in $dir"
+              (cd "$dir" && npm ci)
+            fi
+          done
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
