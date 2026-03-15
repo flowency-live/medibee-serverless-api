@@ -106,6 +106,18 @@ async function findAdminByEmail(email) {
 }
 
 /**
+ * Hardcoded dev admin credentials
+ * TODO: Remove in production - use DynamoDB admin records only
+ */
+const DEV_ADMIN = {
+  email: 'admin@medibee',
+  password: 'Test1234!',
+  adminId: 'ADMIN-DEV-001',
+  name: 'Dev Admin',
+  status: 'active',
+};
+
+/**
  * Admin login
  *
  * @param {Object} credentials - { email, password }
@@ -117,7 +129,21 @@ export async function adminLogin(credentials, logger) {
 
   logger.info('Admin login attempt', { email });
 
-  // Find admin by email
+  // Check hardcoded dev admin first (temporary for testing)
+  if (email === DEV_ADMIN.email && password === DEV_ADMIN.password) {
+    logger.info('Dev admin login successful');
+    const token = await createAdminJwt(DEV_ADMIN);
+    return {
+      success: true,
+      token,
+      adminId: DEV_ADMIN.adminId,
+      email: DEV_ADMIN.email,
+      name: DEV_ADMIN.name,
+      status: 200,
+    };
+  }
+
+  // Find admin by email in DynamoDB
   const admin = await findAdminByEmail(email);
 
   if (!admin) {
