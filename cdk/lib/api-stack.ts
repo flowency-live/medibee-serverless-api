@@ -17,6 +17,7 @@ interface ApiStackProps extends cdk.StackProps {
   matchingLambda: lambda.Function;
   contactsLambda: lambda.Function;
   adminLambda: lambda.Function;
+  authCognitoLambda: lambda.Function;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -25,7 +26,7 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    const { stage, authLambda, candidatesLambda, uploadsLambda, clientsLambda, subscriptionLambda, matchingLambda, contactsLambda, adminLambda } = props;
+    const { stage, authLambda, candidatesLambda, uploadsLambda, clientsLambda, subscriptionLambda, matchingLambda, contactsLambda, adminLambda, authCognitoLambda } = props;
 
     // ===========================================
     // Lambda Authorizer
@@ -128,8 +129,75 @@ export class ApiStack extends cdk.Stack {
       adminLambda
     );
 
+    const authCognitoIntegration = new apigatewayv2Integrations.HttpLambdaIntegration(
+      'AuthCognitoIntegration',
+      authCognitoLambda
+    );
+
     // ===========================================
-    // Public Routes (no auth)
+    // Cognito Auth Routes (public)
+    // ===========================================
+    // Social OAuth redirects
+    this.api.addRoutes({
+      path: '/auth/google',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: authCognitoIntegration,
+    });
+
+    this.api.addRoutes({
+      path: '/auth/apple',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: authCognitoIntegration,
+    });
+
+    // OAuth callback (handles code exchange)
+    this.api.addRoutes({
+      path: '/auth/callback',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: authCognitoIntegration,
+    });
+
+    // Phone OTP
+    this.api.addRoutes({
+      path: '/auth/phone/request',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: authCognitoIntegration,
+    });
+
+    this.api.addRoutes({
+      path: '/auth/phone/verify',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: authCognitoIntegration,
+    });
+
+    // Email magic link
+    this.api.addRoutes({
+      path: '/auth/email/request',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: authCognitoIntegration,
+    });
+
+    this.api.addRoutes({
+      path: '/auth/email/verify',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: authCognitoIntegration,
+    });
+
+    // Session management
+    this.api.addRoutes({
+      path: '/auth/session',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: authCognitoIntegration,
+    });
+
+    this.api.addRoutes({
+      path: '/auth/cognito/logout',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: authCognitoIntegration,
+    });
+
+    // ===========================================
+    // Public Routes (no auth) - Legacy email/password
     // ===========================================
     this.api.addRoutes({
       path: '/auth/register',

@@ -110,8 +110,25 @@ jobs:
       - name: CDK Bootstrap (if needed)
         run: cd cdk && npx cdk bootstrap --context stage=dev || true
 
-      - name: CDK Deploy
-        run: cd cdk && npx cdk deploy --all --context stage=dev --require-approval never
+      # Deploy in two phases to handle cross-stack layer references
+      # Phase 1: Foundation stack (creates layer and stores ARN in SSM)
+      - name: CDK Deploy - Foundation
+        run: cd cdk && npx cdk deploy medibee-foundation-dev --context stage=dev --require-approval never
+
+      # Phase 2: All other stacks (they look up layer ARN from SSM)
+      - name: CDK Deploy - All Services
+        run: |
+          cd cdk && npx cdk deploy \
+            medibee-candidates-dev \
+            medibee-clients-dev \
+            medibee-subscription-dev \
+            medibee-matching-dev \
+            medibee-contacts-dev \
+            medibee-admin-dev \
+            medibee-cognito-dev \
+            medibee-api-dev \
+            --context stage=dev \
+            --require-approval never
 
   # ===========================================
   # Integration Tests (after deploy)

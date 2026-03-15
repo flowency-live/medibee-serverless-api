@@ -4,11 +4,12 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import { getCommonLayer } from './shared/layer-lookup';
 
 interface ContactsStackProps extends cdk.StackProps {
   stage: string;
   table: dynamodb.Table;
-  commonLayer: lambda.LayerVersion;
+  commonLayer?: lambda.ILayerVersion;
 }
 
 export class ContactsStack extends cdk.Stack {
@@ -17,7 +18,8 @@ export class ContactsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ContactsStackProps) {
     super(scope, id, props);
 
-    const { stage, table, commonLayer } = props;
+    const { stage, table } = props;
+    const commonLayer = getCommonLayer(this, stage, props.commonLayer);
 
     // Common Lambda environment variables
     const commonEnv = {

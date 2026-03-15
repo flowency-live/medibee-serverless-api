@@ -104,11 +104,22 @@ export class FoundationStack extends cdk.Stack {
     // ===========================================
     // Lambda Layer (shared utilities)
     // ===========================================
+    // IMPORTANT: Layer is created here but NOT exported via CloudFormation.
+    // Other stacks look up the layer ARN from SSM at synth time.
+    // This avoids CloudFormation export update issues.
     this.commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
       layerVersionName: `medibee-common-${stage}`,
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-layers/medibee-common')),
       compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
       description: 'Medibee shared utilities (logger, cors, auth, responses)',
+    });
+
+    // Store layer ARN in SSM for other stacks to look up
+    // NOTE: After first deploy, other stacks use valueForStringParameter to get this
+    new ssm.StringParameter(this, 'CommonLayerArnParam', {
+      parameterName: `/medibee/${stage}/layer/common-layer-arn`,
+      stringValue: this.commonLayer.layerVersionArn,
+      description: 'ARN of the common Lambda layer - used by other stacks',
     });
 
     // ===========================================

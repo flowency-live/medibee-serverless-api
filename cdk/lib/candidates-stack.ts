@@ -5,12 +5,13 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import { getCommonLayer } from './shared/layer-lookup';
 
 interface CandidatesStackProps extends cdk.StackProps {
   stage: string;
   table: dynamodb.Table;
   filesBucket: s3.Bucket;
-  commonLayer: lambda.ILayerVersion;
+  commonLayer?: lambda.ILayerVersion; // Optional - looked up from SSM if not provided
 }
 
 export class CandidatesStack extends cdk.Stack {
@@ -21,7 +22,8 @@ export class CandidatesStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CandidatesStackProps) {
     super(scope, id, props);
 
-    const { stage, table, filesBucket, commonLayer } = props;
+    const { stage, table, filesBucket } = props;
+    const commonLayer = getCommonLayer(this, stage, props.commonLayer);
 
     // Common Lambda environment variables
     const commonEnv = {

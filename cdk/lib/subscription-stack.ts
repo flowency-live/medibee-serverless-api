@@ -4,11 +4,12 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import { getCommonLayer } from './shared/layer-lookup';
 
 interface SubscriptionStackProps extends cdk.StackProps {
   stage: string;
   table: dynamodb.Table;
-  commonLayer: lambda.LayerVersion;
+  commonLayer?: lambda.ILayerVersion;
 }
 
 export class SubscriptionStack extends cdk.Stack {
@@ -17,7 +18,8 @@ export class SubscriptionStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SubscriptionStackProps) {
     super(scope, id, props);
 
-    const { stage, table, commonLayer } = props;
+    const { stage, table } = props;
+    const commonLayer = getCommonLayer(this, stage, props.commonLayer);
 
     // Stripe Price IDs (placeholder values, set via SSM or environment)
     const stripePriceIds = {

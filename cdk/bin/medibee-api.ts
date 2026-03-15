@@ -9,6 +9,7 @@ import { SubscriptionStack } from '../lib/subscription-stack';
 import { MatchingStack } from '../lib/matching-stack';
 import { ContactsStack } from '../lib/contacts-stack';
 import { AdminStack } from '../lib/admin-stack';
+import { CognitoStack } from '../lib/cognito-stack';
 
 const app = new cdk.App();
 
@@ -25,13 +26,16 @@ const foundationStack = new FoundationStack(app, `medibee-foundation-${stage}`, 
   description: 'Medibee Talent Showcase - Foundation (DynamoDB, S3, SSM)',
 });
 
+// NOTE: Lambda stacks look up commonLayer from SSM, not passed as prop.
+// This decouples stacks and avoids CloudFormation export update issues.
+// CI/CD deploys foundation first (creates layer + SSM param), then other stacks.
+
 // Candidates Stack: Lambda functions for candidates
 const candidatesStack = new CandidatesStack(app, `medibee-candidates-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
   filesBucket: foundationStack.filesBucket,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Candidate Lambda Functions',
 });
 candidatesStack.addDependency(foundationStack);
@@ -41,7 +45,6 @@ const clientsStack = new ClientsStack(app, `medibee-clients-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Client Lambda Functions',
 });
 clientsStack.addDependency(foundationStack);
@@ -51,7 +54,6 @@ const subscriptionStack = new SubscriptionStack(app, `medibee-subscription-${sta
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Subscription Lambda Functions',
 });
 subscriptionStack.addDependency(foundationStack);
@@ -61,7 +63,6 @@ const matchingStack = new MatchingStack(app, `medibee-matching-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Matching Lambda Functions',
 });
 matchingStack.addDependency(foundationStack);
@@ -71,7 +72,6 @@ const contactsStack = new ContactsStack(app, `medibee-contacts-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Contacts Lambda Functions',
 });
 contactsStack.addDependency(foundationStack);
@@ -81,10 +81,18 @@ const adminStack = new AdminStack(app, `medibee-admin-${stage}`, {
   env,
   stage,
   table: foundationStack.table,
-  commonLayer: foundationStack.commonLayer,
   description: 'Medibee Talent Showcase - Admin Lambda Functions',
 });
 adminStack.addDependency(foundationStack);
+
+// Cognito Stack: User Pool, OAuth providers, Auth Lambda
+const cognitoStack = new CognitoStack(app, `medibee-cognito-${stage}`, {
+  env,
+  stage,
+  table: foundationStack.table,
+  description: 'Medibee Talent Showcase - Cognito Authentication',
+});
+cognitoStack.addDependency(foundationStack);
 
 // API Stack: API Gateway, Authorizer, Routes
 const apiStack = new ApiStack(app, `medibee-api-${stage}`, {
@@ -98,6 +106,7 @@ const apiStack = new ApiStack(app, `medibee-api-${stage}`, {
   matchingLambda: matchingStack.matchingLambda,
   contactsLambda: contactsStack.contactsLambda,
   adminLambda: adminStack.adminLambda,
+  authCognitoLambda: cognitoStack.authCognitoLambda,
   description: 'Medibee Talent Showcase - API Gateway',
 });
 apiStack.addDependency(candidatesStack);
@@ -106,6 +115,7 @@ apiStack.addDependency(subscriptionStack);
 apiStack.addDependency(matchingStack);
 apiStack.addDependency(contactsStack);
 apiStack.addDependency(adminStack);
+apiStack.addDependency(cognitoStack);
 
 // Tags for all resources
 cdk.Tags.of(app).add('Project', 'medibee-talent-showcase');
