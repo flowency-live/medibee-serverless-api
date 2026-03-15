@@ -2,6 +2,7 @@
  * Phone OTP Handlers
  *
  * Handles phone-based authentication via SMS OTP.
+ * Per CLAUDE.md: Validates all external input with Zod schemas.
  */
 
 import crypto from 'crypto';
@@ -14,27 +15,27 @@ import {
   deleteOTP,
   checkRateLimit,
   createOrUpdateCandidate,
-  normalizePhoneNumber,
 } from '../lib/dynamodb.mjs';
 import { createSessionToken, buildSessionCookie } from '../lib/session.mjs';
+import {
+  PhoneRequestSchema,
+  PhoneVerifySchema,
+  validate,
+  validationError,
+} from '../lib/validation.mjs';
 
 const snsClient = new SNSClient({});
-
-// UK phone regex
-const UK_PHONE_REGEX = /^(?:0|\+44)[0-9\s]{9,13}$/;
 
 /**
  * Handle OTP request (send SMS)
  */
 export async function handlePhoneRequestOTP(body) {
-  const { phone } = body;
-
-  // Validate phone format
-  if (!phone || !UK_PHONE_REGEX.test(phone.replace(/\s/g, ''))) {
-    return jsonResponse(400, { error: 'Invalid UK phone number' });
+  const validation = validate(PhoneRequestSchema, body);
+  if (!validation.success) {
+    return validationError(validation.error);
   }
 
-  const normalizedPhone = normalizePhoneNumber(phone);
+  const normalizedPhone = validation.data.phone;
 
   // Rate limit: max 3 OTPs per phone per hour
   const rateKey = `PHONE#${normalizedPhone}`;
@@ -95,18 +96,12 @@ export async function handlePhoneRequestOTP(body) {
  * Handle OTP verification
  */
 export async function handlePhoneVerifyOTP(body) {
-  const { phone, otp } = body;
-
-  // Validate inputs
-  if (!phone || !UK_PHONE_REGEX.test(phone.replace(/\s/g, ''))) {
-    return jsonResponse(400, { error: 'Invalid phone number' });
+  const validation = validate(PhoneVerifySchema, body);
+  if (!validation.success) {
+    return validationError(validation.error);
   }
 
-  if (!otp || !/^\d{6}$/.test(otp)) {
-    return jsonResponse(400, { error: 'Invalid verification code' });
-  }
-
-  const normalizedPhone = normalizePhoneNumber(phone);
+  const { phone: normalizedPhone, otp } = validation.data;
 
   // Get OTP record
   const otpRecord = await getOTP(normalizedPhone);

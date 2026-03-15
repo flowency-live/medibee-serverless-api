@@ -51,8 +51,14 @@ medibee-serverless-api/
 │   └── medibee-common/
 │       └── nodejs/lib/      # Shared utilities
 ├── lambdas/                 # Lambda function code
-│   ├── auth/               # Authentication endpoints
+│   ├── auth/               # Legacy authentication endpoints
+│   ├── auth-cognito/       # Cognito authentication (phone/email/OAuth)
 │   ├── candidates/         # Profile CRUD endpoints
+│   ├── clients/            # Client/organisation endpoints
+│   ├── subscription/       # Stripe subscription endpoints
+│   ├── matching/           # Candidate browse/search endpoints
+│   ├── contacts/           # Contact request endpoints
+│   ├── admin/              # Admin dashboard endpoints
 │   └── uploads/            # CV upload endpoints
 └── tests/                   # Test files (mirrors lambdas/)
 ```
@@ -94,7 +100,7 @@ export const handler = async (event, context) => {
   const logger = createLogger(event, context);
 
   try {
-    // 2. Parse and validate input
+    // 2. Parse and validate input (MANDATORY - per CLAUDE.md)
     const body = JSON.parse(event.body || '{}');
     const validation = schema.safeParse(body);
 
@@ -114,6 +120,45 @@ export const handler = async (event, context) => {
   }
 };
 ```
+
+---
+
+## MANDATORY: Input Validation with Zod
+
+**Per CLAUDE.md rules - ALL external input MUST be validated.**
+
+Every Lambda handler MUST:
+
+1. **Define Zod schemas** in a `lib/validation.mjs` file
+2. **Validate at the boundary** before any business logic
+3. **Return typed data** from the schema, not raw input
+
+```javascript
+// lambdas/{name}/lib/validation.mjs
+import { z } from 'zod';
+
+export const RequestSchema = z.object({
+  email: z.string().email(),
+  phone: z.string().regex(/^(?:\+44|0)7\d{9}$/),
+});
+
+export function validate(schema, data) {
+  const result = schema.safeParse(data);
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+  return {
+    success: false,
+    error: result.error.errors[0]?.message || 'Validation failed',
+  };
+}
+```
+
+**NEVER:**
+- Trust `event.body` without validation
+- Trust `queryStringParameters` without validation
+- Use type assertions (`as Type`) instead of validation
+- Skip validation "for speed" or "simplicity"
 
 ---
 
@@ -159,12 +204,29 @@ tests/
 │   ├── register.test.mjs
 │   ├── verify-email.test.mjs
 │   └── login.test.mjs
+├── auth-cognito/              # Cognito auth tests
+│   ├── phone-otp.test.mjs
+│   ├── email-magic-link.test.mjs
+│   └── session.test.mjs
 ├── candidates/
 │   ├── get-profile.test.mjs
 │   └── update-profile.test.mjs
 └── uploads/
     └── cv-upload.test.mjs
 ```
+
+### TDD Enforcement
+
+**Tests MUST be written BEFORE implementation.**
+
+When creating a new Lambda or endpoint:
+1. Create tests first in `tests/{lambda-name}/`
+2. Run tests - they MUST fail (RED state)
+3. Implement the handler
+4. Run tests - they MUST pass (GREEN state)
+5. Only then commit
+
+**NEVER commit Lambda code without corresponding tests.**
 
 ### Running Tests
 ```bash

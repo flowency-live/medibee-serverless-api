@@ -17,9 +17,7 @@ import { config } from './config.mjs';
 import { generateCandidateId, generateShortId } from '/opt/nodejs/lib/ids.mjs';
 
 const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient, {
-  marshallOptions: { removeUndefinedValues: true },
-});
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 /**
  * Find candidate by Cognito sub (user ID)
@@ -162,7 +160,7 @@ export async function createOrUpdateCandidate({
   // Create new candidate
   const candidateId = generateCandidateId();
   const now = new Date().toISOString();
-  const normalizedEmail = email?.toLowerCase().trim();
+  const normalizedEmail = email ? email.toLowerCase().trim() : null;
   const normalizedPhone = phone ? normalizePhoneNumber(phone) : null;
 
   const newCandidate = {

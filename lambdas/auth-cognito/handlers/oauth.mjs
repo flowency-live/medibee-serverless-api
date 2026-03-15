@@ -2,12 +2,14 @@
  * OAuth Handlers
  *
  * Handles Google and Apple OAuth flows via Cognito.
+ * Per CLAUDE.md: Validates all external input with Zod schemas.
  */
 
 import crypto from 'crypto';
 import { config, getCognitoClientSecret } from '../lib/config.mjs';
 import { storeOAuthState, verifyAndDeleteOAuthState, createOrUpdateCandidate } from '../lib/dynamodb.mjs';
 import { createSessionToken, buildSessionCookie } from '../lib/session.mjs';
+import { OAuthCallbackSchema, validate } from '../lib/validation.mjs';
 
 /**
  * Handle Google OAuth redirect
@@ -59,17 +61,22 @@ async function handleSocialAuth(provider) {
  * Handle OAuth callback from Cognito
  */
 export async function handleOAuthCallback(event) {
-  const { code, state, error, error_description } = event.queryStringParameters || {};
+  const queryParams = event.queryStringParameters || {};
+  const { error, error_description } = queryParams;
 
-  // Handle user cancellation or error
+  // Handle user cancellation or error from Cognito
   if (error) {
     console.error('[oauth] Cognito error:', error, error_description);
     return redirectWithError('Authentication cancelled or failed');
   }
 
-  if (!code || !state) {
+  // Validate required callback parameters
+  const validation = validate(OAuthCallbackSchema, queryParams);
+  if (!validation.success) {
     return redirectWithError('Invalid callback parameters');
   }
+
+  const { code, state } = validation.data;
 
   // Verify CSRF state token
   const stateValid = await verifyAndDeleteOAuthState(state);

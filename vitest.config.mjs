@@ -19,6 +19,7 @@ export default defineConfig({
       '**/dist/**',
       // Integration tests that require a running API server
       'tests/auth/**/*.test.mjs',
+      'tests/auth-cognito/**/*.test.mjs',
       'tests/admin/**/*.test.mjs',
       'tests/candidates/get-profile.test.mjs',
       'tests/candidates/update-profile.test.mjs',

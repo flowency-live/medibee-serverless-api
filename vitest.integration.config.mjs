@@ -15,6 +15,7 @@ export default defineConfig({
     environment: 'node',
     include: [
       'tests/auth/**/*.test.mjs',
+      'tests/auth-cognito/**/*.test.mjs',
       'tests/admin/**/*.test.mjs',
       'tests/candidates/delete-account.test.mjs',
       'tests/uploads/cv-upload.test.mjs',

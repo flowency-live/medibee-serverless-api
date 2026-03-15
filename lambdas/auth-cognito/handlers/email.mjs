@@ -2,6 +2,7 @@
  * Email Magic Link Handlers
  *
  * Handles passwordless email authentication via magic links.
+ * Per CLAUDE.md: Validates all external input with Zod schemas.
  */
 
 import crypto from 'crypto';
@@ -15,24 +16,24 @@ import {
   createOrUpdateCandidate,
 } from '../lib/dynamodb.mjs';
 import { createSessionToken, buildSessionCookie } from '../lib/session.mjs';
+import {
+  EmailRequestSchema,
+  validate,
+  validationError,
+} from '../lib/validation.mjs';
 
 const sesClient = new SESClient({});
-
-// Email regex
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Handle magic link request
  */
 export async function handleEmailRequestMagic(body) {
-  const { email } = body;
-
-  // Validate email
-  if (!email || !EMAIL_REGEX.test(email)) {
-    return jsonResponse(400, { error: 'Invalid email address' });
+  const validation = validate(EmailRequestSchema, body);
+  if (!validation.success) {
+    return validationError(validation.error);
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = validation.data.email;
 
   // Rate limit: max 3 magic links per email per hour
   const rateKey = `EMAIL#${normalizedEmail}`;
