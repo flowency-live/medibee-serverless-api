@@ -31,6 +31,7 @@ class ApiClient {
     const options = {
       method,
       headers,
+      redirect: 'manual', // Don't follow redirects - we want to test the actual response
     };
 
     if (body && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
