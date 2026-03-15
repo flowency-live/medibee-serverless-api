@@ -124,3 +124,25 @@ export function validateBody(body, schema) {
     };
   }
 }
+
+/**
+ * Parse and validate query string parameters
+ * @param {Object} query - Query parameters object from event.queryStringParameters
+ * @param {ZodSchema} schema - Zod schema to validate against
+ * @returns {{ success: true, data: T } | { success: false, errors: ZodError }}
+ */
+export function validateQuery(query, schema) {
+  const result = schema.safeParse(query || {});
+
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+
+  return {
+    success: false,
+    errors: result.error.issues.map(issue => ({
+      path: issue.path.join('.'),
+      message: issue.message,
+    })),
+  };
+}
