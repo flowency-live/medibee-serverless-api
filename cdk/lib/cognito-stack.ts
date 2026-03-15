@@ -146,12 +146,14 @@ export class CognitoStack extends cdk.Stack {
     // ===========================================
     // User Pool Client
     // ===========================================
+    // Dev uses the actual API Gateway URL since custom domain isn't set up yet
+    // TODO: Set up api.medibee.opstack.uk custom domain in Route53/CloudFront
     const callbackUrls = isProd
       ? [
           'https://api.medibee-recruitment.co.uk/auth/callback',
         ]
       : [
-          'https://api.medibee.opstack.uk/auth/callback',
+          'https://4zq0km0w5a.execute-api.eu-west-2.amazonaws.com/auth/callback',
           'http://localhost:3001/auth/callback', // Local API dev
         ];
 
@@ -222,12 +224,13 @@ export class CognitoStack extends cdk.Stack {
         FRONTEND_URL: isProd
           ? 'https://www.medibee-recruitment.co.uk'
           : 'https://medibee.opstack.uk',
+        // Dev uses the actual API Gateway URL since custom domain isn't set up yet
         API_BASE_URL: isProd
           ? 'https://api.medibee-recruitment.co.uk'
-          : 'https://api.medibee.opstack.uk',
+          : 'https://4zq0km0w5a.execute-api.eu-west-2.amazonaws.com',
         CALLBACK_URL: isProd
           ? 'https://api.medibee-recruitment.co.uk/auth/callback'
-          : 'https://api.medibee.opstack.uk/auth/callback',
+          : 'https://4zq0km0w5a.execute-api.eu-west-2.amazonaws.com/auth/callback',
         COOKIE_DOMAIN: isProd ? '.medibee-recruitment.co.uk' : '.opstack.uk',
       },
     });
