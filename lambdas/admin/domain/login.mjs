@@ -110,7 +110,7 @@ async function findAdminByEmail(email) {
  * TODO: Remove in production - use DynamoDB admin records only
  */
 const DEV_ADMIN = {
-  email: 'admin@medibee',
+  email: 'admin@medibee.dev',
   password: 'Test1234!',
   adminId: 'ADMIN-DEV-001',
   name: 'Dev Admin',
