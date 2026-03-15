@@ -13,8 +13,15 @@ import {
   DeleteCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { nanoid } from 'nanoid';
 import { config } from './config.mjs';
-import { generateCandidateId, generateShortId } from '/opt/nodejs/lib/ids.mjs';
+
+/**
+ * Generate a unique candidate ID
+ */
+function generateCandidateId() {
+  return `CAND-${nanoid(12)}`;
+}
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
