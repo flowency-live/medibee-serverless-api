@@ -147,13 +147,14 @@ export async function handleEmailVerifyMagic(queryParams) {
 
   console.log(`[email] Verified ${email.slice(0, 3)}***, candidate: ${candidate.candidateId}`);
 
+  // HTTP API v2 uses cookies array instead of Set-Cookie header
   return {
     statusCode: 302,
     headers: {
       Location: `${config.frontendUrl}${redirectPath}`,
-      'Set-Cookie': buildSessionCookie(sessionToken),
       'Cache-Control': 'no-store',
     },
+    cookies: [buildSessionCookie(sessionToken)],
     body: '',
   };
 }

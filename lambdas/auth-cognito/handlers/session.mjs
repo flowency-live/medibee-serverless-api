@@ -27,12 +27,13 @@ export async function handleGetSession(event) {
   const result = await verifySessionToken(sessionToken);
 
   if (!result.valid) {
+    // HTTP API v2 uses cookies array instead of Set-Cookie header
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Set-Cookie': buildLogoutCookie(), // Clear invalid cookie
       },
+      cookies: [buildLogoutCookie()], // Clear invalid cookie
       body: JSON.stringify({
         authenticated: false,
         error: result.error,
@@ -59,12 +60,13 @@ export async function handleGetSession(event) {
 export async function handleLogout(event) {
   console.log('[session] Logout requested');
 
+  // HTTP API v2 uses cookies array instead of Set-Cookie header
   return {
     statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Set-Cookie': buildLogoutCookie(),
     },
+    cookies: [buildLogoutCookie()],
     body: JSON.stringify({
       success: true,
       redirect: `${config.frontendUrl}/candidate/login`,

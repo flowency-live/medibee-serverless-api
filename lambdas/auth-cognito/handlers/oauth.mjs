@@ -120,13 +120,14 @@ export async function handleOAuthCallback(event) {
       ? '/candidate/onboarding'
       : '/candidate/dashboard';
 
+    // HTTP API v2 uses cookies array instead of Set-Cookie header
     return {
       statusCode: 302,
       headers: {
         Location: `${config.frontendUrl}${redirectPath}`,
-        'Set-Cookie': buildSessionCookie(sessionToken),
         'Cache-Control': 'no-store',
       },
+      cookies: [buildSessionCookie(sessionToken)],
       body: '',
     };
   } catch (error) {

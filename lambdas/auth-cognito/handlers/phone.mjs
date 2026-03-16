@@ -163,12 +163,13 @@ export async function handlePhoneVerifyOTP(body) {
 
   console.log(`[phone] Verified ${normalizedPhone.slice(0, 6)}***, candidate: ${candidate.candidateId}`);
 
+  // HTTP API v2 uses cookies array instead of Set-Cookie header
   return {
     statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Set-Cookie': buildSessionCookie(sessionToken),
     },
+    cookies: [buildSessionCookie(sessionToken)],
     body: JSON.stringify({
       success: true,
       redirect: redirectPath,
