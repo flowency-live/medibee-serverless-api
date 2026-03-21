@@ -9,18 +9,31 @@ import {
   ExperienceLevelSchema,
   CareSettingSchema,
   DBSStatusSchema,
+  TaglineSchema,
+  SkillsArraySchema,
+  WorkHistorySchema,
 } from '/opt/nodejs/lib/validation.mjs';
 
 // Profile update schema (all fields optional for PATCH)
 export const UpdateProfileSchema = z.object({
+  // Basic identity
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),
   phone: ukPhoneSchema.optional(),
   city: z.string().min(1).max(100).optional(),
   postcode: ukPostcodeSchema.optional(),
+
+  // Professional identity
+  tagline: TaglineSchema,
   experienceLevel: ExperienceLevelSchema.optional(),
   preferredSettings: z.array(CareSettingSchema).min(1).max(10).optional(),
   professionalSummary: z.string().min(10).max(2000).optional(),
+
+  // Extended profile (narrative elements)
+  workHistory: WorkHistorySchema,
+  skills: SkillsArraySchema,
+
+  // Compliance
   rightToWork: z.boolean().optional(),
   dbsStatus: DBSStatusSchema.optional(),
 }).strict();
